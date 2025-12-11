@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>☀️ Solar Clicker</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        button { font-size: 20px; padding: 10px 20px; margin: 10px; cursor: pointer; transition: transform 0.1s; }
+        button:active { transform: scale(1.2); }
+        #energy, #power, #best { font-size: 24px; margin: 10px; }
+        #event { font-size: 20px; color: orange; margin: 10px; height: 25px; }
+        .floatText {
+            position: absolute;
+            font-size: 20px;
+            color: gold;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-50px); }
+        }
+    </style>
+</head>
+<body>
+    <h1>☀️ Solar Clicker</h1>
+    <div id="energy">Energie: 0</div>
+    <div id="power">Klick-Power: 1</div>
+    <div id="best">Beste Energie: 0</div>
+    <div id="event"></div>
+    <button id="clickSun">☀️ Klick die Sonne!</button>
+    <button id="upgrade">⚡ Upgrade (+1 Power, 10 Energie)</button>
+
+    <script>
+        let energy = Number(localStorage.getItem("energy")) || 0;
+        let power = Number(localStorage.getItem("power")) || 1;
+        let bestEnergy = Number(localStorage.getItem("bestEnergy")) || 0;
+
+        const energyDiv = document.getElementById('energy');
+        const powerDiv = document.getElementById('power');
+        const bestDiv = document.getElementById('best');
+        const eventDiv = document.getElementById('event');
+        const clickSunBtn = document.getElementById('clickSun');
+        const upgradeBtn = document.getElementById('upgrade');
+
+        function updateDisplay() {
+            energyDiv.textContent = "Energie: " + energy;
+            powerDiv.textContent = "Klick-Power: " + power;
+            bestEnergy = Math.max(bestEnergy, energy);
+            bestDiv.textContent = "Beste Energie: " + bestEnergy;
+            localStorage.setItem("energy", energy);
+            localStorage.setItem("power", power);
+            localStorage.setItem("bestEnergy", bestEnergy);
+        }
+
+        function triggerEvent() {
+            let chance = Math.random();
+            if (chance < 0.1) { // 10% Chance
+                let bonus = Math.floor(Math.random() * 10) + 5;
+                energy += bonus;
+                showFloatText("🌟 +" + bonus + " Energie!");
+                updateDisplay();
+            }
+        }
+
+        function showFloatText(text) {
+            const floatDiv = document.createElement('div');
+            floatDiv.textContent = text;
+            floatDiv.className = 'floatText';
+            floatDiv.style.left = (window.innerWidth/2 - 50 + (Math.random()*100 - 50)) + 'px';
+            floatDiv.style.top = '200px';
+            document.body.appendChild(floatDiv);
+            setTimeout(() => floatDiv.remove(), 1000);
+        }
+
+        clickSunBtn.addEventListener('click', () => {
+            let multiplier = 1;
+            if (Math.random() < 0.2) multiplier = 2; // 20% Chance Doppelenergie
+            let gained = power * multiplier;
+            energy += gained;
+            if(multiplier === 2){
+                showFloatText("⚡ Doppelenergie! +" + gained);
+            } else {
+                showFloatText("+" + gained);
+            }
+            triggerEvent();
+            updateDisplay();
+        });
+
+        upgradeBtn.addEventListener('click', () => {
+            if (energy >= 10) {
+                energy -= 10;
+                power += 1;
+                showFloatText("⚡ Upgrade +1 Power!");
+                updateDisplay();
+            } else {
+                alert("Nicht genug Energie für Upgrade!");
+            }
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
