@@ -10,12 +10,24 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f0f8ff;
     font-family: Arial, sans-serif;
+    background: #f0f8ff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right:0; bottom:0;
+    background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+    opacity: 0.1;
+    z-index: 0;
   }
 
   #gameContainer {
     text-align: center;
+    z-index: 1;
   }
 
   h1 { color: #2e8b57; margin-bottom: 10px; }
@@ -31,22 +43,30 @@
   .cell { 
     width: 100px; 
     height: 100px; 
-    background: #a5d6a7; 
+    background: rgba(165,214,167,0.9); 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     font-size: 48px; 
     cursor: pointer; 
     transition: background 0.2s, transform 0.2s; 
+    position: relative;
   }
 
-  .cell:hover { background: #81c784; transform: scale(1.1); }
+  .cell:hover { background: rgba(129,199,132,0.9); transform: scale(1.1); }
   .highlight { background: #ffe082 !important; }
 
   #message { margin-top: 15px; font-size: 20px; color: #1b5e20; }
   #scoreboard { margin-top: 10px; font-size: 18px; color: #1b5e20; }
   #level { margin-top: 10px; font-size: 16px; }
   button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #2e7d32; color: white; border: none; border-radius: 5px; }
+
+  #tip { margin-top: 5px; font-size: 14px; color: #1b5e20; min-height: 18px; }
+
+  @media (max-width: 500px) {
+    #board { grid-template-columns: repeat(3, 80px); grid-template-rows: repeat(3, 80px); }
+    .cell { width: 80px; height: 80px; font-size: 36px; }
+  }
 </style>
 </head>
 <body>
@@ -54,6 +74,7 @@
 <div id="gameContainer">
   <h1>Tic-Tac-Toe 🌱</h1>
   <div id="board"></div>
+  <div id="tip"></div>
   <div id="message"></div>
   <div id="scoreboard">Player: 0 | AI: 0 | Draws: 0</div>
   <div id="level">
@@ -77,10 +98,29 @@ let scores = { player: 0, ai: 0, draw: 0 };
 const boardDiv = document.getElementById('board');
 const messageDiv = document.getElementById('message');
 const scoreboardDiv = document.getElementById('scoreboard');
+const tipDiv = document.getElementById('tip');
 const soundClick = document.getElementById('soundClick');
 const soundWin = document.getElementById('soundWin');
 const levelSelect = document.getElementById('levelSelect');
 
+const tips = [
+  "Every step counts 🌱",
+  "Did you know? Wind energy is clean!",
+  "Save energy, save the planet 🌍",
+  "Hydropower is one of the oldest renewable sources 💧",
+  "Choose green energy for a better future 🌞"
+];
+
+function showTip(index) {
+  tipDiv.textContent = tips[index];
+}
+
+function randomTip() {
+  const idx = Math.floor(Math.random() * tips.length);
+  showTip(idx);
+}
+
+// Tic-Tac-Toe functions
 function renderBoard() {
     boardDiv.innerHTML = '';
     board.forEach((cell, index) => {
@@ -88,6 +128,8 @@ function renderBoard() {
         div.className = 'cell';
         div.textContent = cell;
         div.addEventListener('click', () => playerMove(index));
+        div.addEventListener('mouseenter', () => showTip(index % tips.length));
+        div.addEventListener('touchstart', () => showTip(index % tips.length));
         boardDiv.appendChild(div);
     });
 }
@@ -108,137 +150,39 @@ function checkWinner(player) {
 }
 
 function highlightCells(pattern) {
-    pattern.forEach(i => {
-        boardDiv.children[i].classList.add('highlight');
-    });
+    pattern.forEach(i => boardDiv.children[i].classList.add('highlight'));
 }
 
 function playerMove(index) {
     if(board[index] !== '' || gameOver) return;
-
     board[index] = 'X';
     soundClick.play();
     renderBoard();
-
-    if(checkWinner('X')) {
-        messageDiv.textContent = "You win! 🎉";
-        gameOver = true;
-        scores.player++;
-        updateScore();
-        soundWin.play();
-        return;
-    }
-
-    if(board.every(cell => cell !== '')) {
-        messageDiv.textContent = "It's a draw! 🤝";
-        gameOver = true;
-        scores.draw++;
-        updateScore();
-        return;
-    }
-
-    setTimeout(aiMove, 400); 
+    if(checkWinner('X')) { gameOver=true; scores.player++; messageDiv.textContent="You win! 🎉"; updateScore(); soundWin.play(); return; }
+    if(board.every(cell=>cell!=='')) { gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
+    setTimeout(aiMove, 400);
 }
 
 function aiMove() {
     if(gameOver) return;
     const level = levelSelect.value;
-
     let moveIndex;
-    if(level === 'easy') {
-        moveIndex = randomMove();
-    } else if(level === 'medium') {
-        moveIndex = mediumMove();
-    } else { 
-        moveIndex = bestMove();
-    }
-
-    board[moveIndex] = 'O';
+    if(level==='easy') moveIndex=randomMove();
+    else if(level==='medium') moveIndex=mediumMove();
+    else moveIndex=bestMove();
+    board[moveIndex]='O';
     renderBoard();
-
-    if(checkWinner('O')) {
-        messageDiv.textContent = "AI wins! 🤖🎉";
-        gameOver = true;
-        scores.ai++;
-        updateScore();
-        soundWin.play();
-        return;
-    }
-
-    if(board.every(cell => cell !== '')) {
-        messageDiv.textContent = "It's a draw! 🤝";
-        gameOver = true;
-        scores.draw++;
-        updateScore();
-        return;
-    }
+    if(checkWinner('O')) { gameOver=true; scores.ai++; messageDiv.textContent="AI wins! 🤖🎉"; updateScore(); soundWin.play(); return; }
+    if(board.every(cell=>cell!=='')) { gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
 }
 
-function randomMove() {
-    let empty = board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
-    return empty[Math.floor(Math.random()*empty.length)];
-}
+function randomMove(){ let empty=board.map((v,i)=>v===''?i:null).filter(v=>v!==null); return empty[Math.floor(Math.random()*empty.length)]; }
+function mediumMove(){ for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='O'; if(checkWinner('O')) return i; board[i]=''; } } for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='X'; if(checkWinner('X')){ board[i]='O'; return i; } board[i]=''; } } return randomMove(); }
+function bestMove(){ let best=-Infinity, move; for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='O'; let score=minimax(board,0,false); board[i]=''; if(score>best){ best=score; move=i; } } } return move; }
+function minimax(b,d,isMax){ if(checkWinner('O')) return 10-d; if(checkWinner('X')) return d-10; if(b.every(c=>c!=='')) return 0; if(isMax){ let best=-Infinity; for(let i=0;i<9;i++){ if(b[i]===''){ b[i]='O'; let score=minimax(b,d+1,false); b[i]=''; best=Math.max(score,best); } } return best; } else{ let best=Infinity; for(let i=0;i<9;i++){ if(b[i]===''){ b[i]='X'; let score=minimax(b,d+1,true); b[i]=''; best=Math.min(score,best); } } return best; } }
 
-function mediumMove() {
-    for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='O'; if(checkWinner('O')) return i; board[i]=''; } }
-    for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='X'; if(checkWinner('X')){ board[i]='O'; return i; } board[i]=''; } }
-    return randomMove();
-}
-
-function bestMove() {
-    let bestScore = -Infinity;
-    let move;
-    for(let i=0;i<9;i++){
-        if(board[i]===''){
-            board[i]='O';
-            let score = minimax(board, 0, false);
-            board[i]='';
-            if(score>bestScore){ bestScore=score; move=i; }
-        }
-    }
-    return move;
-}
-
-function minimax(b, depth, isMaximizing){
-    if(checkWinner('O')) return 10 - depth;
-    if(checkWinner('X')) return depth - 10;
-    if(b.every(cell=>cell!=='')) return 0;
-
-    if(isMaximizing){
-        let bestScore=-Infinity;
-        for(let i=0;i<9;i++){
-            if(b[i]===''){
-                b[i]='O';
-                let score = minimax(b, depth+1, false);
-                b[i]='';
-                bestScore=Math.max(score,bestScore);
-            }
-        }
-        return bestScore;
-    } else {
-        let bestScore=Infinity;
-        for(let i=0;i<9;i++){
-            if(b[i]===''){
-                b[i]='X';
-                let score = minimax(b, depth+1, true);
-                b[i]='';
-                bestScore=Math.min(score,bestScore);
-            }
-        }
-        return bestScore;
-    }
-}
-
-function resetGame() {
-    board = ['', '', '', '', '', '', '', '', ''];
-    gameOver = false;
-    messageDiv.textContent = '';
-    renderBoard();
-}
-
-function updateScore() {
-    scoreboardDiv.textContent = `Player: ${scores.player} | AI: ${scores.ai} | Draws: ${scores.draw}`;
-}
+function resetGame(){ board=['','','','','','','','','']; gameOver=false; messageDiv.textContent=''; renderBoard(); }
+function updateScore(){ scoreboardDiv.textContent=`Player: ${scores.player} | AI: ${scores.ai} | Draws: ${scores.draw}`; }
 
 renderBoard();
 </script>
