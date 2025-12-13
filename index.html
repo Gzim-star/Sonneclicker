@@ -11,8 +11,7 @@
     justify-content: center;
     align-items: center;
     font-family: Arial, sans-serif;
-    background: #c8e6c9; /* Kräftigere Hintergrundfarbe */
-    position: relative;
+    background: #c8e6c9; /* Hintergrundfarbe */
     overflow: hidden;
   }
 
@@ -25,7 +24,7 @@
   
   #board { 
     display: grid; 
-    grid-template-columns: repeat(3, 150px); /* größere Zellen */
+    grid-template-columns: repeat(3, 150px); 
     grid-template-rows: repeat(3, 150px);
     gap: 10px; 
     margin: 0 auto; 
@@ -37,7 +36,7 @@
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-size: 72px; /* größere X/O */
+    font-size: 72px; 
     cursor: pointer; 
     transition: all 0.3s; 
     position: relative;
@@ -45,16 +44,6 @@
     font-weight: bold;
     border-radius: 12px;
   }
-
-  .cell:nth-child(1) { background: #4caf50; }
-  .cell:nth-child(2) { background: #81c784; }
-  .cell:nth-child(3) { background: #388e3c; }
-  .cell:nth-child(4) { background: #66bb6a; }
-  .cell:nth-child(5) { background: #a5d6a7; }
-  .cell:nth-child(6) { background: #43a047; }
-  .cell:nth-child(7) { background: #2e7d32; }
-  .cell:nth-child(8) { background: #81c784; }
-  .cell:nth-child(9) { background: #4caf50; }
 
   .cell:hover { transform: scale(1.05); filter: brightness(1.2); }
   .highlight { background: #ffe082 !important; color: #000 !important; }
@@ -75,7 +64,7 @@
 <body>
 
 <div id="gameContainer">
-  <h1>Tic-Tac-Toe 🌱</h1>
+  <h1>Tic-Tac-Toe 🌈</h1>
   <div id="board"></div>
   <div id="tip"></div>
   <div id="message"></div>
@@ -123,13 +112,18 @@ function showTip(index) { tipDiv.textContent = tips[index]; }
 function randomTip() { showTip(Math.floor(Math.random() * tips.length)); }
 setInterval(randomTip, 4000); randomTip();
 
-// Tic-Tac-Toe logic
+function randomColor() {
+    const colors = ["#e57373","#f06292","#ba68c8","#9575cd","#7986cb","#64b5f6","#4dd0e1","#4db6ac","#81c784","#aed581","#dce775","#fff176","#ffd54f","#ffb74d","#ff8a65"];
+    return colors[Math.floor(Math.random()*colors.length)];
+}
+
 function renderBoard() {
     boardDiv.innerHTML = '';
     board.forEach((cell,index)=>{
         const div=document.createElement('div');
         div.className='cell';
         div.textContent=cell;
+        if(cell==='') div.style.backgroundColor = randomColor();
         div.addEventListener('click',()=>playerMove(index));
         div.addEventListener('mouseenter',()=>showTip(index%tips.length));
         div.addEventListener('touchstart',()=>showTip(index%tips.length));
