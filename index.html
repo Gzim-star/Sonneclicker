@@ -45,12 +45,6 @@
     border-radius: 12px;
   }
 
-  /* Sanfter Glow beim Tippen */
-  .cell.active {
-    box-shadow: 0 0 25px 10px rgba(255,255,255,0.8);
-    transform: scale(1.05);
-  }
-
   #message { margin-top: 20px; font-size: 24px; color: #ffffff; }
   #scoreboard { margin-top: 15px; font-size: 20px; color: #ffffff; }
   #level { margin-top: 15px; font-size: 18px; color: #ffffff; }
@@ -120,6 +114,20 @@ function randomColor() {
     return colors[Math.floor(Math.random()*colors.length)];
 }
 
+function lightenColor(color, percent){
+    const num = parseInt(color.replace("#",""),16),
+          amt = Math.round(2.55 * percent),
+          R = (num >> 16) + amt,
+          G = (num >> 8 & 0x00FF) + amt,
+          B = (num & 0x0000FF) + amt;
+    return "#" + (
+      0x1000000 + 
+      (R<255?R<1?0:R:255)*0x10000 + 
+      (G<255?G<1?0:G:255)*0x100 + 
+      (B<255?B<1?0:B:255)
+    ).toString(16).slice(1);
+}
+
 function renderBoard() {
     boardDiv.innerHTML = '';
     board.forEach((cell,index)=>{
@@ -128,19 +136,18 @@ function renderBoard() {
         div.textContent=cell;
         if(cell==='') div.style.backgroundColor = randomColor();
 
-        // Glow beim Tippen
-        div.addEventListener('mousedown',()=>activateGlow(div));
-        div.addEventListener('touchstart',()=>activateGlow(div));
+        div.addEventListener('click',()=>{
+            playerMove(index);
+            // Glow passend zur Zelle
+            const glowColor = lightenColor(div.style.backgroundColor, 40);
+            div.style.boxShadow = `0 0 25px 10px ${glowColor}`;
+            setTimeout(()=>div.style.boxShadow='',250);
+        });
 
-        div.addEventListener('click',()=>playerMove(index));
         div.addEventListener('mouseenter',()=>showTip(index%tips.length));
+        div.addEventListener('touchstart',()=>showTip(index%tips.length));
         boardDiv.appendChild(div);
     });
-}
-
-function activateGlow(div){
-    div.classList.add('active');
-    setTimeout(()=>div.classList.remove('active'), 250); // Glow verblasst sanft
 }
 
 function checkWinner(player){
