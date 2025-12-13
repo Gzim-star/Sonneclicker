@@ -38,15 +38,19 @@
     justify-content: center; 
     font-size: 72px; 
     cursor: pointer; 
-    transition: all 0.3s; 
+    transition: all 0.2s; 
     position: relative;
     color: white;
     font-weight: bold;
     border-radius: 12px;
+    /* Hintergrundfarbe wird per JS gesetzt */
   }
 
-  .cell:hover { transform: scale(1.05); filter: brightness(1.2); }
-  .highlight { background: #ffe082 !important; color: #000 !important; }
+  /* Leuchteffekt beim Tippen */
+  .cell:active { 
+    box-shadow: 0 0 25px 12px rgba(255,255,255,0.8);
+    transform: scale(1.05);
+  }
 
   #message { margin-top: 20px; font-size: 24px; color: #ffffff; }
   #scoreboard { margin-top: 15px; font-size: 20px; color: #ffffff; }
@@ -112,7 +116,7 @@ function showTip(index) { tipDiv.textContent = tips[index]; }
 function randomTip() { showTip(Math.floor(Math.random() * tips.length)); }
 setInterval(randomTip, 4000); randomTip();
 
-// Helle, kräftige Farben für Zellen
+// Helle Farben für Zellen
 function randomColor() {
     const colors = ["#ff8a80","#ff80ab","#ea80fc","#b388ff","#8c9eff","#80d8ff","#84ffff","#a7ffeb","#b9f6ca","#ccff90","#f4ff81","#ffff8d","#ffe57f","#ffd180","#ff9e80"];
     return colors[Math.floor(Math.random()*colors.length)];
@@ -125,9 +129,11 @@ function renderBoard() {
         div.className='cell';
         div.textContent=cell;
         if(cell==='') div.style.backgroundColor = randomColor();
+
+        // Tippen erzeugt Glow
         div.addEventListener('click',()=>playerMove(index));
-        div.addEventListener('mouseenter',()=>showTip(index%tips.length));
-        div.addEventListener('touchstart',()=>showTip(index%tips.length));
+        div.addEventListener('touchstart',()=>playerMove(index));
+        
         boardDiv.appendChild(div);
     });
 }
@@ -135,17 +141,13 @@ function renderBoard() {
 function checkWinner(player){
     const winPatterns=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
     for(const pattern of winPatterns){
-        if(pattern.every(i=>board[i]===player)){
-            highlightCells(pattern); return true;
-        }
+        if(pattern.every(i=>board[i]===player)) return true;
     }
     return false;
 }
 
-function highlightCells(pattern){ pattern.forEach(i=>boardDiv.children[i].classList.add('highlight')); }
-
 function playerMove(index){
-    if(board[index]!==' '&&board[index]!=='') return;
+    if(board[index]!=='') return;
     if(gameOver) return;
     board[index]='X'; soundClick.play(); renderBoard();
     if(checkWinner('X')){ gameOver=true; scores.player++; messageDiv.textContent="You win! 🎉"; updateScore(); soundWin.play(); return; }
