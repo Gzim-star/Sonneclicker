@@ -13,6 +13,7 @@
   #message { margin-top: 20px; font-size: 20px; color: #1b5e20; }
   button { padding: 10px 20px; margin-top: 20px; font-size: 16px; cursor: pointer; background: #2e7d32; color: white; border: none; border-radius: 5px; }
   #scoreboard { margin-top: 10px; font-size: 18px; color: #1b5e20; }
+  #level { margin-top: 10px; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -21,6 +22,14 @@
 <div id="board"></div>
 <div id="message"></div>
 <div id="scoreboard">Player: 0 | AI: 0 | Draws: 0</div>
+<div id="level">
+  Level: 
+  <select id="levelSelect">
+    <option value="easy">Easy</option>
+    <option value="medium" selected>Medium</option>
+    <option value="hard">Hard</option>
+  </select>
+</div>
 <button onclick="resetGame()">Restart Game</button>
 
 <audio id="soundClick" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
@@ -35,6 +44,7 @@ const messageDiv = document.getElementById('message');
 const scoreboardDiv = document.getElementById('scoreboard');
 const soundClick = document.getElementById('soundClick');
 const soundWin = document.getElementById('soundWin');
+const levelSelect = document.getElementById('levelSelect');
 
 function renderBoard() {
     boardDiv.innerHTML = '';
@@ -92,47 +102,105 @@ function playerMove(index) {
         return;
     }
 
-    setTimeout(aiMove, 500); // AI move delay
+    setTimeout(aiMove, 400); // AI move delay
 }
 
 function aiMove() {
     if(gameOver) return;
+    const level = levelSelect.value;
 
-    // 1️⃣ Check if AI can win
-    for(let i=0; i<board.length; i++) {
-        if(board[i]==='') {
-            board[i] = 'O';
-            if(checkWinner('O')) {
-                renderBoard();
-                messageDiv.textContent = "AI wins! 🤖🎉";
-                gameOver = true;
-                scores.ai++;
-                updateScore();
-                soundWin.play();
-                return;
-            }
-            board[i] = '';
-        }
+    let moveIndex;
+    if(level === 'easy') {
+        moveIndex = randomMove();
+    } else if(level === 'medium') {
+        moveIndex = mediumMove();
+    } else { // hard
+        moveIndex = bestMove();
     }
 
-    // 2️⃣ Block player if about to win
-    for(let i=0; i<board.length; i++) {
-        if(board[i]==='') {
-            board[i] = 'X';
-            if(checkWinner('X')) {
-                board[i] = 'O';
-                renderBoard();
-                return;
-            }
-            board[i] = '';
-        }
-    }
-
-    // 3️⃣ Otherwise pick random empty
-    let emptyIndexes = board.map((val,i)=>val===''?i:null).filter(v=>v!==null);
-    let randomIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
-    board[randomIndex] = 'O';
+    board[moveIndex] = 'O';
     renderBoard();
+
+    if(checkWinner('O')) {
+        messageDiv.textContent = "AI wins! 🤖🎉";
+        gameOver = true;
+        scores.ai++;
+        updateScore();
+        soundWin.play();
+        return;
+    }
+
+    if(board.every(cell => cell !== '')) {
+        messageDiv.textContent = "It's a draw! 🤝";
+        gameOver = true;
+        scores.draw++;
+        updateScore();
+        return;
+    }
+}
+
+// Easy: random empty cell
+function randomMove() {
+    let empty = board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
+    return empty[Math.floor(Math.random()*empty.length)];
+}
+
+// Medium: block + win, else random
+function mediumMove() {
+    // Check win
+    for(let i=0;i<9;i++){
+        if(board[i]===''){ board[i]='O'; if(checkWinner('O')) return i; board[i]=''; }
+    }
+    // Block player
+    for(let i=0;i<9;i++){
+        if(board[i]===''){ board[i]='X'; if(checkWinner('X')){ board[i]='O'; return i; } board[i]=''; }
+    }
+    return randomMove();
+}
+
+// Hard: simple Minimax
+function bestMove() {
+    let bestScore = -Infinity;
+    let move;
+    for(let i=0;i<9;i++){
+        if(board[i]===''){
+            board[i]='O';
+            let score = minimax(board, 0, false);
+            board[i]='';
+            if(score>bestScore){ bestScore=score; move=i; }
+        }
+    }
+    return move;
+}
+
+function minimax(b, depth, isMaximizing){
+    if(checkWinner('O')) return 10 - depth;
+    if(checkWinner('X')) return depth - 10;
+    if(b.every(cell=>cell!=='')) return 0;
+
+    if(isMaximizing){
+        let bestScore=-Infinity;
+        for(let i=0;i<9;i++){
+            if(b[i]===''){
+                b[i]='O';
+                let score = minimax(b, depth+1, false);
+                b[i]='';
+                bestScore=Math.max(score,bestScore);
+            }
+        }
+        return bestScore;
+    } else {
+        let bestScore=Infinity;
+        for(let i=0;i<9;i++){
+            if(b[i]===''){
+                b[i]='X';
+                let score = minimax(b, depth+1, true);
+                b[i]='';
+                bestScore=Math.min(score,bestScore);
+            }
+        }
+        return bestScore;
+    }
 }
 
 function resetGame() {
@@ -146,7 +214,6 @@ function updateScore() {
     scoreboardDiv.textContent = `Player: ${scores.player} | AI: ${scores.ai} | Draws: ${scores.draw}`;
 }
 
-// Initial render
 renderBoard();
 </script>
 
