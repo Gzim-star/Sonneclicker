@@ -4,33 +4,68 @@
 <meta charset="UTF-8">
 <title>Tic-Tac-Toe Player vs AI</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; background: #f0f8ff; }
-  h1 { color: #2e8b57; }
-  #board { display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 5px; margin: 20px auto; }
-  .cell { width: 100px; height: 100px; background: #a5d6a7; display: flex; align-items: center; justify-content: center; font-size: 48px; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #f0f8ff;
+    font-family: Arial, sans-serif;
+  }
+
+  #gameContainer {
+    text-align: center;
+  }
+
+  h1 { color: #2e8b57; margin-bottom: 10px; }
+  
+  #board { 
+    display: grid; 
+    grid-template-columns: repeat(3, 100px); 
+    grid-template-rows: repeat(3, 100px); 
+    gap: 5px; 
+    margin: 0 auto; 
+  }
+
+  .cell { 
+    width: 100px; 
+    height: 100px; 
+    background: #a5d6a7; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 48px; 
+    cursor: pointer; 
+    transition: background 0.2s, transform 0.2s; 
+  }
+
   .cell:hover { background: #81c784; transform: scale(1.1); }
   .highlight { background: #ffe082 !important; }
-  #message { margin-top: 20px; font-size: 20px; color: #1b5e20; }
-  button { padding: 10px 20px; margin-top: 20px; font-size: 16px; cursor: pointer; background: #2e7d32; color: white; border: none; border-radius: 5px; }
+
+  #message { margin-top: 15px; font-size: 20px; color: #1b5e20; }
   #scoreboard { margin-top: 10px; font-size: 18px; color: #1b5e20; }
   #level { margin-top: 10px; font-size: 16px; }
+  button { padding: 10px 20px; margin-top: 15px; font-size: 16px; cursor: pointer; background: #2e7d32; color: white; border: none; border-radius: 5px; }
 </style>
 </head>
 <body>
 
-<h1>Tic-Tac-Toe 🌱</h1>
-<div id="board"></div>
-<div id="message"></div>
-<div id="scoreboard">Player: 0 | AI: 0 | Draws: 0</div>
-<div id="level">
-  Level: 
-  <select id="levelSelect">
-    <option value="easy">Easy</option>
-    <option value="medium" selected>Medium</option>
-    <option value="hard">Hard</option>
-  </select>
+<div id="gameContainer">
+  <h1>Tic-Tac-Toe 🌱</h1>
+  <div id="board"></div>
+  <div id="message"></div>
+  <div id="scoreboard">Player: 0 | AI: 0 | Draws: 0</div>
+  <div id="level">
+    Level: 
+    <select id="levelSelect">
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <button onclick="resetGame()">Restart Game</button>
 </div>
-<button onclick="resetGame()">Restart Game</button>
 
 <audio id="soundClick" src="https://www.soundjay.com/button/sounds/button-16.mp3"></audio>
 <audio id="soundWin" src="https://www.soundjay.com/button/sounds/button-3.mp3"></audio>
@@ -102,7 +137,7 @@ function playerMove(index) {
         return;
     }
 
-    setTimeout(aiMove, 400); // AI move delay
+    setTimeout(aiMove, 400); 
 }
 
 function aiMove() {
@@ -114,7 +149,7 @@ function aiMove() {
         moveIndex = randomMove();
     } else if(level === 'medium') {
         moveIndex = mediumMove();
-    } else { // hard
+    } else { 
         moveIndex = bestMove();
     }
 
@@ -139,26 +174,17 @@ function aiMove() {
     }
 }
 
-// Easy: random empty cell
 function randomMove() {
     let empty = board.map((v,i)=>v===''?i:null).filter(v=>v!==null);
     return empty[Math.floor(Math.random()*empty.length)];
 }
 
-// Medium: block + win, else random
 function mediumMove() {
-    // Check win
-    for(let i=0;i<9;i++){
-        if(board[i]===''){ board[i]='O'; if(checkWinner('O')) return i; board[i]=''; }
-    }
-    // Block player
-    for(let i=0;i<9;i++){
-        if(board[i]===''){ board[i]='X'; if(checkWinner('X')){ board[i]='O'; return i; } board[i]=''; }
-    }
+    for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='O'; if(checkWinner('O')) return i; board[i]=''; } }
+    for(let i=0;i<9;i++){ if(board[i]===''){ board[i]='X'; if(checkWinner('X')){ board[i]='O'; return i; } board[i]=''; } }
     return randomMove();
 }
 
-// Hard: simple Minimax
 function bestMove() {
     let bestScore = -Infinity;
     let move;
