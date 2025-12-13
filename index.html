@@ -38,12 +38,15 @@
     justify-content: center; 
     font-size: 72px; 
     cursor: pointer; 
-    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    transition: all 0.3s; 
     position: relative;
     color: white;
     font-weight: bold;
     border-radius: 12px;
   }
+
+  .cell:hover { transform: scale(1.05); filter: brightness(1.2); }
+  .highlight { background: #ffe082 !important; color: #000 !important; }
 
   #message { margin-top: 20px; font-size: 24px; color: #ffffff; }
   #scoreboard { margin-top: 15px; font-size: 20px; color: #ffffff; }
@@ -61,7 +64,7 @@
 <body>
 
 <div id="gameContainer">
-  <h1>Tic-Tac-Toe 🌈</h1>
+  <h1></h1>
   <div id="board"></div>
   <div id="tip"></div>
   <div id="message"></div>
@@ -110,22 +113,8 @@ function randomTip() { showTip(Math.floor(Math.random() * tips.length)); }
 setInterval(randomTip, 4000); randomTip();
 
 function randomColor() {
-    const colors = ["#ff8a80","#ff80ab","#ea80fc","#b388ff","#8c9eff","#80d8ff","#84ffff","#a7ffeb","#b9f6ca","#ccff90","#f4ff81","#ffff8d","#ffe57f","#ffd180","#ff9e80"];
+    const colors = ["#e57373","#f06292","#ba68c8","#9575cd","#7986cb","#64b5f6","#4dd0e1","#4db6ac","#81c784","#aed581","#dce775","#fff176","#ffd54f","#ffb74d","#ff8a65"];
     return colors[Math.floor(Math.random()*colors.length)];
-}
-
-function lightenColor(color, percent){
-    const num = parseInt(color.replace("#",""),16),
-          amt = Math.round(2.55 * percent),
-          R = (num >> 16) + amt,
-          G = (num >> 8 & 0x00FF) + amt,
-          B = (num & 0x0000FF) + amt;
-    return "#" + (
-      0x1000000 + 
-      (R<255?R<1?0:R:255)*0x10000 + 
-      (G<255?G<1?0:G:255)*0x100 + 
-      (B<255?B<1?0:B:255)
-    ).toString(16).slice(1);
 }
 
 function renderBoard() {
@@ -135,15 +124,7 @@ function renderBoard() {
         div.className='cell';
         div.textContent=cell;
         if(cell==='') div.style.backgroundColor = randomColor();
-
-        div.addEventListener('click',()=>{
-            playerMove(index);
-            // Glow passend zur Zelle
-            const glowColor = lightenColor(div.style.backgroundColor, 40);
-            div.style.boxShadow = `0 0 25px 10px ${glowColor}`;
-            setTimeout(()=>div.style.boxShadow='',250);
-        });
-
+        div.addEventListener('click',()=>playerMove(index));
         div.addEventListener('mouseenter',()=>showTip(index%tips.length));
         div.addEventListener('touchstart',()=>showTip(index%tips.length));
         boardDiv.appendChild(div);
@@ -163,31 +144,12 @@ function checkWinner(player){
 function highlightCells(pattern){ pattern.forEach(i=>boardDiv.children[i].classList.add('highlight')); }
 
 function playerMove(index){
-    if(board[index]!=='') return;
+    if(board[index]!==' '&&board[index]!=='') return;
     if(gameOver) return;
-
-    board[index]='X'; 
-    soundClick.play(); 
-    renderBoard();
-
-    if(checkWinner('X')){
-        gameOver=true; 
-        scores.player++; 
-        messageDiv.textContent="You win! 🎉"; 
-        updateScore(); 
-        soundWin.play(); 
-        return; 
-    }
-
-    if(board.every(c=>c!=='')){
-        gameOver=true; 
-        scores.draw++; 
-        messageDiv.textContent="It's a draw! 🤝"; 
-        updateScore(); 
-        return; 
-    }
-
-    setTimeout(() => aiMove(), 200);
+    board[index]='X'; soundClick.play(); renderBoard();
+    if(checkWinner('X')){ gameOver=true; scores.player++; messageDiv.textContent="You win! 🎉"; updateScore(); soundWin.play(); return; }
+    if(board.every(c=>c!=='')){ gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
+    setTimeout(aiMove,400);
 }
 
 function aiMove(){
@@ -199,21 +161,8 @@ function aiMove(){
     else moveIndex=bestMove();
     board[moveIndex]='O';
     renderBoard();
-    if(checkWinner('O')){
-        gameOver=true; 
-        scores.ai++; 
-        messageDiv.textContent="AI wins! 🤖🎉"; 
-        updateScore(); 
-        soundWin.play(); 
-        return; 
-    }
-    if(board.every(c=>c!=='')){
-        gameOver=true; 
-        scores.draw++; 
-        messageDiv.textContent="It's a draw! 🤝"; 
-        updateScore(); 
-        return; 
-    }
+    if(checkWinner('O')){ gameOver=true; scores.ai++; messageDiv.textContent="AI wins! 🤖🎉"; updateScore(); soundWin.play(); return; }
+    if(board.every(c=>c!=='')){ gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
 }
 
 function randomMove(){ let empty=board.map((v,i)=>v===''?i:null).filter(v=>v!==null); return empty[Math.floor(Math.random()*empty.length)]; }
