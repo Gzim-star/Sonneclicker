@@ -45,8 +45,12 @@
     border-radius: 12px;
   }
 
-  .cell:hover { transform: scale(1.05); filter: brightness(1.2); }
-  .highlight { background: #ffe082 !important; color: #000 !important; }
+  /* Leuchteffekt beim Tippen */
+  .cell:active {
+    box-shadow: 0 0 20px 5px white;
+    transform: scale(1.05);
+    filter: brightness(1.5);
+  }
 
   #message { margin-top: 20px; font-size: 24px; color: #ffffff; }
   #scoreboard { margin-top: 15px; font-size: 20px; color: #ffffff; }
@@ -64,7 +68,7 @@
 <body>
 
 <div id="gameContainer">
-  <h1>🌈</h1>
+  <h1>Tic-Tac-Toe 🌈</h1>
   <div id="board"></div>
   <div id="tip"></div>
   <div id="message"></div>
@@ -145,12 +149,32 @@ function checkWinner(player){
 function highlightCells(pattern){ pattern.forEach(i=>boardDiv.children[i].classList.add('highlight')); }
 
 function playerMove(index){
-    if(board[index]!==' '&&board[index]!=='') return;
+    if(board[index]!=='') return;
     if(gameOver) return;
-    board[index]='X'; soundClick.play(); renderBoard();
-    if(checkWinner('X')){ gameOver=true; scores.player++; messageDiv.textContent="You win! 🎉"; updateScore(); soundWin.play(); return; }
-    if(board.every(c=>c!=='')){ gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
-    setTimeout(aiMove,400);
+
+    board[index]='X'; 
+    soundClick.play(); 
+    renderBoard(); // Spielerzug sofort sichtbar
+
+    if(checkWinner('X')){
+        gameOver=true; 
+        scores.player++; 
+        messageDiv.textContent="You win! 🎉"; 
+        updateScore(); 
+        soundWin.play(); 
+        return; 
+    }
+
+    if(board.every(c=>c!=='')){
+        gameOver=true; 
+        scores.draw++; 
+        messageDiv.textContent="It's a draw! 🤝"; 
+        updateScore(); 
+        return; 
+    }
+
+    // AI-Zug nach kurzem Delay, damit Spielerzug sichtbar bleibt
+    setTimeout(() => aiMove(), 200);
 }
 
 function aiMove(){
@@ -162,8 +186,21 @@ function aiMove(){
     else moveIndex=bestMove();
     board[moveIndex]='O';
     renderBoard();
-    if(checkWinner('O')){ gameOver=true; scores.ai++; messageDiv.textContent="AI wins! 🤖🎉"; updateScore(); soundWin.play(); return; }
-    if(board.every(c=>c!=='')){ gameOver=true; scores.draw++; messageDiv.textContent="It's a draw! 🤝"; updateScore(); return; }
+    if(checkWinner('O')){
+        gameOver=true; 
+        scores.ai++; 
+        messageDiv.textContent="AI wins! 🤖🎉"; 
+        updateScore(); 
+        soundWin.play(); 
+        return; 
+    }
+    if(board.every(c=>c!=='')){
+        gameOver=true; 
+        scores.draw++; 
+        messageDiv.textContent="It's a draw! 🤝"; 
+        updateScore(); 
+        return; 
+    }
 }
 
 function randomMove(){ let empty=board.map((v,i)=>v===''?i:null).filter(v=>v!==null); return empty[Math.floor(Math.random()*empty.length)]; }
