@@ -112,17 +112,9 @@ const boardDiv = document.getElementById('board');
 const timerDiv = document.getElementById('timer');
 const messageDiv = document.getElementById('message');
 const scoreboardDiv = document.getElementById('scoreboard');
-const tipDiv = document.getElementById('tip');
 const soundClick = document.getElementById('soundClick');
 const soundWin = document.getElementById('soundWin');
 const levelSelect = document.getElementById('levelSelect');
-
-const tips = [
-  "Every step counts 🌱",
-  "Wind energy is clean! 💨",
-  "Save energy, save the planet 🌍",
-  "Choose green energy 🌞"
-];
 
 function randomColor() {
   const colors = ["#e57373","#f06292","#ba68c8","#9575cd","#7986cb","#64b5f6","#4dd0e1","#4db6ac","#81c784","#aed581","#fff176","#ffd54f","#ffb74d","#ff8a65"];
@@ -198,7 +190,7 @@ function aiMove() {
   let move;
   if (levelSelect.value === 'easy') move = randomMove();
   else if (levelSelect.value === 'medium') move = mediumMove();
-  else move = bestMove();
+  else move = randomMove(); // Hard bleibt absichtlich gleich
 
   board[move] = 'O';
   renderBoard();
@@ -228,8 +220,41 @@ function randomMove() {
   return empty[Math.floor(Math.random()*empty.length)];
 }
 
-function mediumMove() { return randomMove(); }
-function bestMove() { return randomMove(); }
+/* 🔥 SMART MEDIUM AI 🔥 */
+function mediumMove() {
+
+  // Gewinnen?
+  for (let i = 0; i < 9; i++) {
+    if (board[i] === '') {
+      board[i] = 'O';
+      if (checkWinner('O')) return i;
+      board[i] = '';
+    }
+  }
+
+  // Blockieren?
+  for (let i = 0; i < 9; i++) {
+    if (board[i] === '') {
+      board[i] = 'X';
+      if (checkWinner('X')) {
+        board[i] = '';
+        return i;
+      }
+      board[i] = '';
+    }
+  }
+
+  // Mitte
+  if (board[4] === '') return 4;
+
+  // Ecken
+  const corners = [0,2,6,8].filter(i => board[i] === '');
+  if (corners.length) {
+    return corners[Math.floor(Math.random()*corners.length)];
+  }
+
+  return randomMove();
+}
 
 function updateScore() {
   scoreboardDiv.textContent =
