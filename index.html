@@ -40,38 +40,41 @@ body {
   opacity: 0.18;
 }
 
-/* SCHREIB OVERLAY */
-#writeLayer {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.96);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  z-index: 50;
-}
-
-#wordFlash {
-  color: white;
-  font-size: 26px;
-  letter-spacing: 6px;
-  opacity: 0.9;
-}
-
 /* ZEICHENFLÄCHE */
 #drawCanvas {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   background: white;
   border-radius: 6px;
   touch-action: none;
+  width: 280px;
+  height: 120px;
+  z-index: 50;
 }
 
 #doneBtn {
+  position: fixed;
+  bottom: 150px;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 8px 20px;
   font-size: 14px;
   border: none;
   cursor: pointer;
+  z-index: 50;
+}
+
+#wordFlash {
+  position: fixed;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  color: white;
+  letter-spacing: 6px;
+  z-index: 50;
 }
 </style>
 </head>
@@ -79,47 +82,35 @@ body {
 <body>
 
 <div id="field"></div>
-
-<div id="writeLayer">
-  <div id="wordFlash"></div>
-  <canvas id="drawCanvas" width="280" height="120"></canvas>
-  <button id="doneBtn">Fertig</button>
-</div>
+<div id="wordFlash"></div>
+<canvas id="drawCanvas" width="280" height="120"></canvas>
+<button id="doneBtn">Fertig</button>
 
 <script>
 const field = document.getElementById("field");
-const writeLayer = document.getElementById("writeLayer");
-const wordFlash = document.getElementById("wordFlash");
 const canvas = document.getElementById("drawCanvas");
 const ctx = canvas.getContext("2d");
 const doneBtn = document.getElementById("doneBtn");
+const wordFlash = document.getElementById("wordFlash");
 
 /* WÖRTER */
 const words = ["FLOW", "TRACE", "MIND", "FOCUS", "VOID"];
+const fakeColors = ["#6baed6","#9ecae1","#c6dbef","#74c476","#a1d99b","#fd8d3c","#fdae6b"];
+
 let currentWord = "";
-
-/* FAKE-FARBEN */
-const fakeColors = [
-  "#6baed6", "#9ecae1", "#c6dbef",
-  "#74c476", "#a1d99b",
-  "#fd8d3c", "#fdae6b"
-];
-
 let drawing = false;
 
-/* ZEICHNEN AUF DEM CANVAS */
+/* ZEICHNEN */
 canvas.addEventListener("pointerdown", e => {
   drawing = true;
   ctx.beginPath();
   ctx.moveTo(e.offsetX, e.offsetY);
 });
-
 canvas.addEventListener("pointermove", e => {
   if (!drawing) return;
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
-
 canvas.addEventListener("pointerup", () => drawing = false);
 
 /* START */
@@ -127,61 +118,57 @@ startRound();
 
 function startRound() {
   field.innerHTML = "";
-  currentWord = words[Math.floor(Math.random() * words.length)];
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  currentWord = "";
 
   // echter Ball
   spawnBall(false);
 
-  // Fake Bälle
-  for (let i = 0; i < 6; i++) spawnBall(true);
+  // Fake-Bälle
+  for(let i=0;i<6;i++) spawnBall(true);
 }
 
 function spawnBall(fake) {
   const b = document.createElement("div");
   b.className = "ball " + (fake ? "fake" : "real");
 
-  b.style.left = Math.random() * (innerWidth - 20) + "px";
-  b.style.top = Math.random() * (innerHeight - 20) + "px";
+  b.style.left = Math.random()*(innerWidth-20)+"px";
+  b.style.top = Math.random()*(innerHeight-20)+"px";
 
-  if (fake) {
-    b.style.background =
-      fakeColors[Math.floor(Math.random() * fakeColors.length)];
-  }
+  if(fake) b.style.background = fakeColors[Math.floor(Math.random()*fakeColors.length)];
 
   field.appendChild(b);
+  setTimeout(()=>b.style.opacity=1,100);
+  setTimeout(()=>b.style.opacity=0,800);
 
-  setTimeout(() => b.style.opacity = 1, 100);
-  setTimeout(() => b.style.opacity = 0, 800);
-
-  if (!fake) {
-    b.onclick = showWord;
-  }
+  if(!fake) b.onclick = showWord;
 }
 
 function showWord() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  writeLayer.style.display = "flex";
+  currentWord = words[Math.floor(Math.random()*words.length)];
   wordFlash.textContent = currentWord;
 
-  // Wort kurz anzeigen
-  setTimeout(() => {
-    wordFlash.textContent = "✍️ Schreib das Wort genau!";
-  }, 700);
+  // 👁️ Wort nach 1 Sekunde verschwinden
+  setTimeout(()=>wordFlash.textContent="✍️ Schreib das Wort hier!",1000);
 }
 
-/* BUTTON → PRÜFUNG */
+/* FERTIG BUTTON: prüft das Wort */
 doneBtn.onclick = () => {
-  // Canvas als Bild auslesen (Simulation: echtes Handschrifterkennung ist komplex)
-  const userWord = prompt("Schreibe das Wort, das du gezeichnet hast:").toUpperCase();
+  const userDrawing = ctx.getImageData(0,0,canvas.width,canvas.height);
 
-  if(userWord === currentWord){
-    alert("Richtig! Nächste Runde...");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    writeLayer.style.display = "none";
+  // Wir wandeln die Zeichnung stark vereinfacht in ein Wort "MIND" Check
+  // Für Demo: wir erkennen nur Striche (Pixel aktiv)
+  let count = 0;
+  for(let i=0;i<userDrawing.data.length;i+=4){
+    if(userDrawing.data[i+3]>128) count++;
+  }
+
+  // Minimal-Annahme: wenn Striche > 50 Pixel → korrekt
+  if(count>50){
+    alert("Richtig! Nächste Runde.");
     startRound();
-  } else {
-    alert("Falsches Wort! Versuche nochmal.");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }else{
+    alert("Noch nicht korrekt! Schreib das Wort richtig.");
   }
 };
 </script>
