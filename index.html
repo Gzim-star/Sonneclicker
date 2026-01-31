@@ -2,159 +2,202 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Find the Ball – Level 2</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrainTrials – Find the Ball</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
-body {
-  margin: 0;
-  background: black;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
+html,body{
+  margin:0;
+  background:black;
+  color:white;
+  height:100%;
+  overflow:hidden;
+  font-family:Arial, sans-serif;
 }
 
-/* SPIELFELD */
-#field {
-  position: fixed;
-  inset: 0;
+#game {
+  position:relative;
+  width:100%;
+  height:100%;
 }
 
-/* BALL */
+/* BALLS */
 .ball {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.25s ease;
+  position:absolute;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:white;
+  opacity:0;
+  transition:opacity .6s;
+  cursor:pointer;
 }
 
-.real { background: white; }
-.fake { opacity: 0.18; }
-
-/* EINGABE */
-#wordLayer {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.96);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  z-index: 50;
+.ball.fake {
+  opacity:.4;
 }
 
-#shownWord {
-  color: white;
-  font-size: 26px;
-  letter-spacing: 6px;
+/* WORD FLASH */
+#wordFlash {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:42px;
+  letter-spacing:6px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .4s;
 }
 
-#wordInput {
-  padding: 8px;
-  font-size: 18px;
-  text-align: center;
-  width: 200px;
+/* WRITE OVERLAY */
+#writeOverlay {
+  position:fixed;
+  inset:0;
+  background:black;
+  display:none;
+  flex-direction:column;
 }
 
-#feedback {
-  font-size: 14px;
-  opacity: 0.7;
+canvas {
+  flex:1;
+  touch-action:none;
+}
+
+/* BUTTONS */
+.controls {
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
 }
 
 button {
-  padding: 8px 18px;
-  border: none;
-  cursor: pointer;
+  background:white;
+  color:black;
+  border:none;
+  padding:8px 14px;
+  font-size:14px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div id="field"></div>
+<div id="game">
+  <div id="wordFlash"></div>
+</div>
 
-<div id="wordLayer">
-  <div id="shownWord"></div>
-  <input id="wordInput" autocomplete="off" />
-  <div id="feedback"></div>
-  <button id="checkBtn">Bestätigen</button>
+<!-- WRITE -->
+<div id="writeOverlay">
+  <canvas id="draw"></canvas>
+  <div class="controls">
+    <button id="clear">Löschen</button>
+    <button id="done">Fertig geschrieben</button>
+  </div>
 </div>
 
 <script>
-const field = document.getElementById("field");
-const layer = document.getElementById("wordLayer");
-const shownWord = document.getElementById("shownWord");
-const input = document.getElementById("wordInput");
-const feedback = document.getElementById("feedback");
-const checkBtn = document.getElementById("checkBtn");
+const game = document.getElementById("game");
+const flash = document.getElementById("wordFlash");
+const overlay = document.getElementById("writeOverlay");
+const canvas = document.getElementById("draw");
+const ctx = canvas.getContext("2d");
 
-const words = ["MIND", "FLOW", "TRACE", "FOCUS", "VOID"];
-const fakeColors = [
-  "#6baed6", "#9ecae1", "#c6dbef",
-  "#74c476", "#a1d99b",
-  "#fd8d3c"
-];
+const WORDS = ["MIND","FOCUS","FLOW","AWARE"];
+let level = 0;
+let realBall;
 
-let currentWord = "";
+/* ---------- BALL SPAWN ---------- */
+function spawnBalls(){
+  game.innerHTML = '<div id="wordFlash"></div>';
+  realBall = document.createElement("div");
+  realBall.className = "ball";
+  place(realBall);
+  game.appendChild(realBall);
 
-/* START */
-startRound();
+  realBall.onclick = hitBall;
 
-function startRound() {
-  field.innerHTML = "";
-  spawnBall(false);
-  for (let i = 0; i < 6; i++) spawnBall(true);
-}
-
-function spawnBall(fake) {
-  const b = document.createElement("div");
-  b.className = "ball " + (fake ? "fake" : "real");
-
-  b.style.left = Math.random() * (innerWidth - 20) + "px";
-  b.style.top = Math.random() * (innerHeight - 20) + "px";
-
-  if (fake) {
-    b.style.background =
-      fakeColors[Math.floor(Math.random() * fakeColors.length)];
+  for(let i=0;i<6;i++){
+    const f = document.createElement("div");
+    f.className = "ball fake";
+    place(f);
+    game.appendChild(f);
   }
 
-  field.appendChild(b);
-
-  setTimeout(() => b.style.opacity = 1, 100);
-  setTimeout(() => b.style.opacity = 0, 800);
-
-  if (!fake) b.onclick = showWord;
+  setTimeout(()=>showBalls(true),300);
+  setTimeout(()=>showBalls(false),1200);
 }
 
-/* WORT */
-function showWord() {
-  currentWord = words[Math.floor(Math.random() * words.length)];
-  shownWord.textContent = currentWord;
-  input.value = "";
-  feedback.textContent = "";
-  layer.style.display = "flex";
-
-  // Wort kurz sichtbar
-  setTimeout(() => {
-    shownWord.textContent = "✍️ Schreib das Wort";
-  }, 700);
-
-  input.focus();
+function place(b){
+  b.style.left = Math.random()*90 + "%";
+  b.style.top = Math.random()*90 + "%";
 }
 
-/* CHECK */
-checkBtn.onclick = () => {
-  if (input.value.toUpperCase() === currentWord) {
-    layer.style.display = "none";
-    startRound();
-  } else {
-    feedback.textContent = "❌ Falsch – versuch es nochmal";
-    input.value = "";
-    input.focus();
-  }
+function showBalls(on){
+  document.querySelectorAll(".ball").forEach(b=>{
+    b.style.opacity = on ? 1 : 0;
+  });
+}
+
+/* ---------- HIT ---------- */
+function hitBall(){
+  showWord();
+}
+
+function showWord(){
+  const word = WORDS[level % WORDS.length];
+  flash.textContent = word;
+  flash.style.opacity = 1;
+
+  setTimeout(()=>{
+    flash.style.opacity = 0;
+    openWrite();
+  },1200);
+}
+
+/* ---------- WRITE ---------- */
+function openWrite(){
+  overlay.style.display="flex";
+  resizeCanvas();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight-60;
+  ctx.strokeStyle="white";
+  ctx.lineWidth=4;
+  ctx.lineCap="round";
+}
+
+let draw=false;
+canvas.onpointerdown=e=>{
+  draw=true;
+  ctx.beginPath();
+  ctx.moveTo(e.offsetX,e.offsetY);
 };
+canvas.onpointermove=e=>{
+  if(!draw) return;
+  ctx.lineTo(e.offsetX,e.offsetY);
+  ctx.stroke();
+};
+canvas.onpointerup=()=>draw=false;
+
+/* ---------- BUTTONS ---------- */
+document.getElementById("clear").onclick=()=>{
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+};
+
+document.getElementById("done").onclick=()=>{
+  overlay.style.display="none";
+  level++;
+  spawnBalls();
+};
+
+/* ---------- START ---------- */
+spawnBalls();
 </script>
 
 </body>
