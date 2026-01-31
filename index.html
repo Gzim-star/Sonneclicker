@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>IQ Word Puzzle – 3 Words</title>
+<title>IQ Word Puzzle – 6 Words Mixed</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -64,10 +64,10 @@ const message = document.getElementById("message");
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const words = [
-  "GZIM",  "MIND", "FLOW", "FOCUS", "VOID", "TRACE",
-  "LOGIC", "BRAIN", "THINK", "SHIFT", "AWARE",
-  "DEPTH", "VISION", "PATTERN", "REACT",
-  "MEMORY", "ATTENTION", "COGNITION"
+  "GZIM","MIND","FLOW","FOCUS","VOID","TRACE",
+  "LOGIC","BRAIN","THINK","SHIFT","AWARE",
+  "DEPTH","VISION","PATTERN","REACT",
+  "MEMORY","ATTENTION","COGNITION"
 ];
 
 let positions = [];
@@ -79,23 +79,25 @@ function generateGrid() {
   message.textContent = "";
   currentIndex = 0;
   positions = [];
+  let globalOrder = 0;
 
   /* 6 verschiedene Wörter wählen */
-const WORDS_PER_GRID = 6;
-
-const selected = [];
-while (selected.length < WORDS_PER_GRID) {
-  const w = words[Math.floor(Math.random() * words.length)];
-  if (!selected.includes(w)) selected.push(w);
-}
+  const WORDS_PER_GRID = 6;
+  const selected = [];
+  while (selected.length < WORDS_PER_GRID) {
+    const w = words[Math.floor(Math.random() * words.length)];
+    if (!selected.includes(w)) selected.push(w);
+  }
 
   /* leeres Grid vorbereiten */
-  const gridData = Array.from({ length: 12 }, () =>
-    Array.from({ length: 12 }, () => null)
-  );
+  const gridData = Array.from({ length: 12 }, () => Array.from({ length: 12 }, () => null));
+
+  /* Modi für 6 Wörter vorbereiten */
+  const modes = [0,0,1,1,2,2]; // 0=horizontal, 1=vertikal, 2=diagonal
+  shuffleArray(modes); // zufällig mischen
 
   /* Wörter platzieren */
-  selected.forEach(word => placeWord(word, gridData));
+  selected.forEach((word, idx) => placeWord(word, gridData, modes[idx]));
 
   /* Grid zeichnen */
   for (let r = 0; r < 12; r++) {
@@ -116,40 +118,33 @@ while (selected.length < WORDS_PER_GRID) {
   }
 
   /* Klick-Reihenfolge sortieren */
-  positions.sort((a, b) => a.order - b.order);
+  positions.sort((a,b) => a.order - b.order);
 }
 
 /* 🔤 Wort platzieren */
-let globalOrder = 0;
-
-function placeWord(word, gridData) {
+function placeWord(word, gridData, mode) {
   const len = word.length;
   let placed = false;
 
-  while (!placed) {
-    const mode = Math.floor(Math.random() * 3);
-    const maxRow = mode === 0 ? 12 : 12 - len;
-    const maxCol = mode === 1 ? 12 : 12 - len;
-
-    const sr = Math.floor(Math.random() * maxRow);
-    const sc = Math.floor(Math.random() * maxCol);
+  while(!placed) {
+    const maxRow = mode===0 ? 12 : 12 - len;
+    const maxCol = mode===1 ? 12 : 12 - len;
+    const sr = Math.floor(Math.random()*maxRow);
+    const sc = Math.floor(Math.random()*maxCol);
 
     let fits = true;
-    for (let i = 0; i < len; i++) {
-      const r = sr + (mode === 1 || mode === 2 ? i : 0);
-      const c = sc + (mode === 0 || mode === 2 ? i : 0);
-      if (gridData[r][c]) { fits = false; break; }
+    for (let i=0;i<len;i++){
+      const r = sr + (mode===1||mode===2? i :0);
+      const c = sc + (mode===0||mode===2? i :0);
+      if(gridData[r][c]) { fits=false; break; }
     }
 
-    if (!fits) continue;
+    if(!fits) continue;
 
-    for (let i = 0; i < len; i++) {
-      const r = sr + (mode === 1 || mode === 2 ? i : 0);
-      const c = sc + (mode === 0 || mode === 2 ? i : 0);
-      gridData[r][c] = {
-        letter: word[i],
-        order: globalOrder++
-      };
+    for(let i=0;i<len;i++){
+      const r = sr + (mode===1||mode===2? i :0);
+      const c = sc + (mode===0||mode===2? i :0);
+      gridData[r][c] = { letter: word[i], order: globalOrder++ };
     }
 
     placed = true;
@@ -157,20 +152,27 @@ function placeWord(word, gridData) {
 }
 
 /* ✅ Klick prüfen */
-function checkClick(div) {
+function checkClick(div){
   const expected = positions[currentIndex]?.div;
-
-  if (div === expected) {
+  if(div===expected){
     div.classList.add("correct");
     currentIndex++;
-
-    if (currentIndex === positions.length) {
-      setTimeout(generateGrid, 1200);
+    if(currentIndex===positions.length){
+      setTimeout(generateGrid,1200);
     }
   } else {
     div.classList.add("wrong");
-    setTimeout(() => div.classList.remove("wrong"), 700);
+    setTimeout(()=>div.classList.remove("wrong"),700);
   }
+}
+
+/* Hilfsfunktion: Array mischen */
+function shuffleArray(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
 }
 
 generateGrid();
