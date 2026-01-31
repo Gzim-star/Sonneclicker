@@ -27,6 +27,7 @@ body {
   border-radius: 50%;
   opacity: 0;
   transition: opacity 0.25s ease;
+  cursor: pointer;
 }
 
 /* ECHTER BALL */
@@ -39,38 +40,41 @@ body {
   opacity: 0.18;
 }
 
-/* SCHREIB OVERLAY */
-#writeLayer {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.96);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  z-index: 50;
-}
-
-#wordFlash {
-  color: white;
-  font-size: 26px;
-  letter-spacing: 6px;
-  opacity: 0.9;
-}
-
-/* ZEICHENFLÄCHE */
+/* SCHREIBFLÄCHE */
 #drawCanvas {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   background: white;
   border-radius: 6px;
   touch-action: none;
+  display: none; /* erst sichtbar nach Wort */
+  z-index: 50;
 }
-
+#wordFlash {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 32px;
+  letter-spacing: 4px;
+  opacity: 0.9;
+  display: none; /* erst sichtbar kurz nach Ball */
+  z-index: 50;
+}
 #doneBtn {
+  position: fixed;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
   padding: 8px 20px;
   font-size: 14px;
   border: none;
   cursor: pointer;
+  display: none;
+  z-index: 50;
 }
 </style>
 </head>
@@ -78,23 +82,19 @@ body {
 <body>
 
 <div id="field"></div>
-
-<div id="writeLayer">
-  <div id="wordFlash"></div>
-  <canvas id="drawCanvas" width="280" height="120"></canvas>
-  <button id="doneBtn">Weiter</button>
-</div>
+<div id="wordFlash"></div>
+<canvas id="drawCanvas" width="280" height="120"></canvas>
+<button id="doneBtn">Weiter</button>
 
 <script>
 const field = document.getElementById("field");
-const writeLayer = document.getElementById("writeLayer");
-const wordFlash = document.getElementById("wordFlash");
 const canvas = document.getElementById("drawCanvas");
 const ctx = canvas.getContext("2d");
+const wordFlash = document.getElementById("wordFlash");
 const doneBtn = document.getElementById("doneBtn");
 
-/* WÖRTER (nur Anzeige, kein Check!) */
-const words = ["FLOW", "TRACE", "MIND", "FOCUS", "VOID"];
+/* WÖRTER */
+const words = ["FLOW","TRACE","MIND","FOCUS","VOID"];
 
 /* FAKE-FARBEN */
 const fakeColors = [
@@ -104,33 +104,36 @@ const fakeColors = [
 ];
 
 let drawing = false;
+let currentWord = "";
 
-/* ZEICHNEN */
+/* ZEICHNEN AUF CANVAS */
 canvas.addEventListener("pointerdown", e => {
   drawing = true;
   ctx.beginPath();
   ctx.moveTo(e.offsetX, e.offsetY);
 });
-
 canvas.addEventListener("pointermove", e => {
   if (!drawing) return;
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
-
 canvas.addEventListener("pointerup", () => drawing = false);
 
-/* START */
+/* STARTE RUNDE */
 startRound();
 
 function startRound() {
   field.innerHTML = "";
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  canvas.style.display = "none";
+  wordFlash.style.display = "none";
+  doneBtn.style.display = "none";
 
   // echter Ball
   spawnBall(false);
 
   // Fake Bälle
-  for (let i = 0; i < 6; i++) spawnBall(true);
+  for (let i=0;i<6;i++) spawnBall(true);
 }
 
 function spawnBall(fake) {
@@ -141,40 +144,57 @@ function spawnBall(fake) {
   b.style.top = Math.random() * (innerHeight - 20) + "px";
 
   if (fake) {
-    b.style.background =
-      fakeColors[Math.floor(Math.random() * fakeColors.length)];
+    b.style.background = fakeColors[Math.floor(Math.random()*fakeColors.length)];
   }
 
   field.appendChild(b);
 
-  setTimeout(() => b.style.opacity = 1, 100);
-  setTimeout(() => b.style.opacity = 0, 800);
+  setTimeout(()=>b.style.opacity=1,100);
+  setTimeout(()=>b.style.opacity=0,800);
 
-  if (!fake) {
-    b.onclick = showWord;
-  }
+  if(!fake) b.onclick = showWord;
 }
 
-/* WORT ZEIGEN */
+/* WORT ZEIGEN UND DANN CANVAS */
 function showWord() {
-  const word = words[Math.floor(Math.random() * words.length)];
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  writeLayer.style.display = "flex";
+  const word = words[Math.floor(Math.random()*words.length)];
+  currentWord = word;
   wordFlash.textContent = word;
+  wordFlash.style.display = "block";
 
-  // 👁️ Wort verschwindet
-  setTimeout(() => {
-    wordFlash.textContent = "only correkt word";
-  }, 700);
+  setTimeout(()=>{
+    wordFlash.textContent = "✍️ Schreib das Wort";
+    canvas.style.display = "block";
+    doneBtn.style.display = "block";
+  },700);
 }
 
-/* FERTIG → IMMER OK */
+/* FERTIG → NUR WENN RICHTIG */
 doneBtn.onclick = () => {
-  writeLayer.style.display = "none";
+  // Canvas auslesen
+  // Für Demo: wir erkennen einfach ob etwas geschrieben wurde (Pixel > 0)
+  const imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  let written = false;
+  for(let i=0;i<imgData.data.length;i+=4){
+    if(imgData.data[i+0] !==255 || imgData.data[i+1] !==255 || imgData.data[i+2] !==255){
+      written=true;
+      break;
+    }
+  }
+
+  if(!written){
+    alert("Du musst etwas schreiben, um weiter zu kommen!");
+    return;
+  }
+
+  // In einer echten Version hier kann man die Handschrift gegen currentWord prüfen
+  // Für Demo lassen wir nur weiter wenn Canvas beschrieben wurde
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  canvas.style.display="none";
+  doneBtn.style.display="none";
+  wordFlash.style.display="none";
   startRound();
 };
 </script>
-
 </body>
 </html>
