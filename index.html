@@ -13,7 +13,7 @@ body {
   font-family: Arial, sans-serif;
 }
 
-/* SPIELFLÄCHE */
+/* SPIELFELD */
 #field {
   position: fixed;
   inset: 0;
@@ -22,24 +22,21 @@ body {
 /* BALL */
 .ball {
   position: absolute;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: white;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.25s ease;
 }
 
-/* FAKE */
-.fake {
-  opacity: 0.15;
-}
+.real { background: white; }
+.fake { opacity: 0.18; }
 
-/* SCHREIB-LAYER */
-#writeLayer {
+/* EINGABE */
+#wordLayer {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.95);
+  background: rgba(0,0,0,0.96);
   display: none;
   flex-direction: column;
   align-items: center;
@@ -48,21 +45,28 @@ body {
   z-index: 50;
 }
 
-#wordFlash {
+#shownWord {
   color: white;
-  font-size: 28px;
+  font-size: 26px;
   letter-spacing: 6px;
 }
 
-#drawCanvas {
-  background: white;
-  border-radius: 6px;
-  touch-action: none;
+#wordInput {
+  padding: 8px;
+  font-size: 18px;
+  text-align: center;
+  width: 200px;
 }
 
-#doneBtn {
-  padding: 8px 18px;
+#feedback {
   font-size: 14px;
+  opacity: 0.7;
+}
+
+button {
+  padding: 8px 18px;
+  border: none;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -71,80 +75,85 @@ body {
 
 <div id="field"></div>
 
-<div id="writeLayer">
-  <div id="wordFlash"></div>
-  <canvas id="drawCanvas" width="280" height="120"></canvas>
-  <button id="doneBtn">Fertig</button>
+<div id="wordLayer">
+  <div id="shownWord"></div>
+  <input id="wordInput" autocomplete="off" />
+  <div id="feedback"></div>
+  <button id="checkBtn">Bestätigen</button>
 </div>
 
 <script>
 const field = document.getElementById("field");
-const writeLayer = document.getElementById("writeLayer");
-const wordFlash = document.getElementById("wordFlash");
-const canvas = document.getElementById("drawCanvas");
-const ctx = canvas.getContext("2d");
-const doneBtn = document.getElementById("doneBtn");
+const layer = document.getElementById("wordLayer");
+const shownWord = document.getElementById("shownWord");
+const input = document.getElementById("wordInput");
+const feedback = document.getElementById("feedback");
+const checkBtn = document.getElementById("checkBtn");
 
-const words = ["FOCUS", "FLOW", "MIND", "TRACE", "BALL"];
-let drawing = false;
+const words = ["MIND", "FLOW", "TRACE", "FOCUS", "VOID"];
+const fakeColors = [
+  "#6baed6", "#9ecae1", "#c6dbef",
+  "#74c476", "#a1d99b",
+  "#fd8d3c"
+];
 
-/* 🖊️ Zeichnen */
-canvas.addEventListener("pointerdown", e => {
-  drawing = true;
-  ctx.moveTo(e.offsetX, e.offsetY);
-});
-canvas.addEventListener("pointermove", e => {
-  if (!drawing) return;
-  ctx.lineTo(e.offsetX, e.offsetY);
-  ctx.stroke();
-});
-canvas.addEventListener("pointerup", () => drawing = false);
+let currentWord = "";
 
-/* SPIEL START */
+/* START */
 startRound();
 
 function startRound() {
   field.innerHTML = "";
-
-  // echter Ball
   spawnBall(false);
-
-  // Fake-Bälle
-  for (let i = 0; i < 5; i++) spawnBall(true);
+  for (let i = 0; i < 6; i++) spawnBall(true);
 }
 
 function spawnBall(fake) {
   const b = document.createElement("div");
-  b.className = "ball" + (fake ? " fake" : "");
+  b.className = "ball " + (fake ? "fake" : "real");
+
   b.style.left = Math.random() * (innerWidth - 20) + "px";
   b.style.top = Math.random() * (innerHeight - 20) + "px";
+
+  if (fake) {
+    b.style.background =
+      fakeColors[Math.floor(Math.random() * fakeColors.length)];
+  }
+
   field.appendChild(b);
 
   setTimeout(() => b.style.opacity = 1, 100);
-  setTimeout(() => b.style.opacity = 0, 700);
+  setTimeout(() => b.style.opacity = 0, 800);
 
-  if (!fake) {
-    b.onclick = () => triggerWord();
-  }
+  if (!fake) b.onclick = showWord;
 }
 
-/* WORT → GEDÄCHTNIS */
-function triggerWord() {
-  const word = words[Math.floor(Math.random() * words.length)];
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  writeLayer.style.display = "flex";
-  wordFlash.textContent = word;
+/* WORT */
+function showWord() {
+  currentWord = words[Math.floor(Math.random() * words.length)];
+  shownWord.textContent = currentWord;
+  input.value = "";
+  feedback.textContent = "";
+  layer.style.display = "flex";
 
-  // 👁️ Nur kurz sichtbar
+  // Wort kurz sichtbar
   setTimeout(() => {
-    wordFlash.textContent = "✍️ Schreib es aus dem Kopf";
+    shownWord.textContent = "✍️ Schreib das Wort";
   }, 700);
+
+  input.focus();
 }
 
-/* FERTIG */
-doneBtn.onclick = () => {
-  writeLayer.style.display = "none";
-  startRound();
+/* CHECK */
+checkBtn.onclick = () => {
+  if (input.value.toUpperCase() === currentWord) {
+    layer.style.display = "none";
+    startRound();
+  } else {
+    feedback.textContent = "❌ Falsch – versuch es nochmal";
+    input.value = "";
+    input.focus();
+  }
 };
 </script>
 
