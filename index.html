@@ -92,11 +92,11 @@ function generateGrid() {
   hiddenWord = words[Math.floor(Math.random() * words.length)];
   const len = hiddenWord.length;
 
- const direction = Math.floor(Math.random() * 3);
-// 0 = horizontal | 1 = vertikal | 2 = diagonal
+
 const startRow = Math.floor(Math.random() * (12 - len));
 const startCol = Math.floor(Math.random() * (12 - len));
-
+const direction = Math.floor(Math.random() * 4);
+// 0 = ➡️ | 1 = ⬇️ | 2 = ↘️ | 3 = ↙️
   positions = [];
 
   for (let r = 0; r < 12; r++) {
@@ -104,22 +104,47 @@ const startCol = Math.floor(Math.random() * (12 - len));
       const div = document.createElement("div");
       div.className = "cell";
 
+let startRow, startCol;
+
+if (direction === 0) { // ➡️
+  startRow = Math.floor(Math.random() * 12);
+  startCol = Math.floor(Math.random() * (12 - len));
+}
+
+if (direction === 1) { // ⬇️
+  startRow = Math.floor(Math.random() * (12 - len));
+  startCol = Math.floor(Math.random() * 12);
+}
+
+if (direction === 2) { // ↘️
+  startRow = Math.floor(Math.random() * (12 - len));
+  startCol = Math.floor(Math.random() * (12 - len));
+}
+
+if (direction === 3) { // ↙️
+  startRow = Math.floor(Math.random() * (12 - len));
+  startCol = Math.floor(Math.random() * 12);
+}
 if (direction === 0 && r === startRow && c >= startCol && c < startCol + len) {
   div.textContent = hiddenWord[c - startCol];
-  positions.push({div});
 }
+
 else if (direction === 1 && c === startCol && r >= startRow && r < startRow + len) {
   div.textContent = hiddenWord[r - startRow];
-  positions.push({div});
 }
-else if (
-  direction === 2 &&
-  r >= startRow && r < startRow + len &&
-  c >= startCol && c < startCol + len &&
-  (r - startRow) === (c - startCol)
-) {
+
+else if (direction === 2 &&
+         r >= startRow && r < startRow + len &&
+         c >= startCol && c < startCol + len &&
+         r - startRow === c - startCol) {
   div.textContent = hiddenWord[r - startRow];
-  positions.push({div});
+}
+
+else if (direction === 3 &&
+         r >= startRow && r < startRow + len &&
+         c <= startCol && c > startCol - len &&
+         r - startRow === startCol - c) {
+  div.textContent = hiddenWord[r - startRow];
 
       } else {
         div.textContent = alphabet[Math.floor(Math.random() * alphabet.length)];
