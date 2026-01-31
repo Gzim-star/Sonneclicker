@@ -82,7 +82,7 @@ body {
 <div id="writeLayer">
   <div id="wordFlash"></div>
   <canvas id="drawCanvas" width="280" height="120"></canvas>
-  <button id="doneBtn">Weiter</button>
+  <button id="doneBtn">Fertig</button>
 </div>
 
 <script>
@@ -93,8 +93,9 @@ const canvas = document.getElementById("drawCanvas");
 const ctx = canvas.getContext("2d");
 const doneBtn = document.getElementById("doneBtn");
 
-/* WÖRTER (nur Anzeige, kein Check!) */
+/* WÖRTER */
 const words = ["FLOW", "TRACE", "MIND", "FOCUS", "VOID"];
+let currentWord = "";
 
 /* FAKE-FARBEN */
 const fakeColors = [
@@ -125,6 +126,7 @@ startRound();
 
 function startRound() {
   field.innerHTML = "";
+  currentWord = words[Math.floor(Math.random() * words.length)];
 
   // echter Ball
   spawnBall(false);
@@ -157,22 +159,29 @@ function spawnBall(fake) {
 
 /* WORT ZEIGEN */
 function showWord() {
-  const word = words[Math.floor(Math.random() * words.length)];
-
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   writeLayer.style.display = "flex";
-  wordFlash.textContent = word;
+  wordFlash.textContent = currentWord;
 
-  // 👁️ Wort verschwindet
+  // kurze Vorschau
   setTimeout(() => {
-    wordFlash.textContent = "✍️ Schreib irgendwas";
+    wordFlash.textContent = "✍️ Schreib das Wort hier";
   }, 700);
 }
 
-/* FERTIG → IMMER OK */
+/* FERTIG → PRÜFUNG */
 doneBtn.onclick = () => {
-  writeLayer.style.display = "none";
-  startRound();
+  // Canvas lesen als Text (hier nur Simulation: echtes Erkennen würde OCR erfordern)
+  let userWord = prompt("Schreibe das Wort hier:").toUpperCase(); // Prompt ersetzt Canvas-Erkennung
+
+  if(userWord === currentWord){
+    alert("Richtig! Nächste Runde...");
+    writeLayer.style.display = "none";
+    startRound();
+  } else {
+    alert("Falsches Wort! Versuch nochmal.");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 };
 </script>
 
