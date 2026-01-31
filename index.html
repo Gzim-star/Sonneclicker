@@ -2,10 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>IQ Word Puzzle</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>IQ Word Puzzle – Klick-Version</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
@@ -32,7 +30,7 @@ h1 {
 }
 
 .cell {
-  background: white;
+  background: #808080;
   border-radius: 10%;
   cursor: pointer;
   display: flex;
@@ -79,7 +77,7 @@ const grid = document.getElementById("grid");
 const message = document.getElementById("message");
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const words = ["GEZIM", "FOCUS", "FLOW", "MIND", "VOID", "TRACE"];
+const words = ["MIND", "FOCUS", "FLOW", "VOID", "TRACE"];
 let hiddenWord = "";
 let positions = [];
 let currentIndex = 0;
@@ -92,11 +90,10 @@ function generateGrid() {
   hiddenWord = words[Math.floor(Math.random() * words.length)];
   const len = hiddenWord.length;
 
+  const horizontal = Math.random() < 0.5;
+  const startRow = Math.floor(Math.random() * (horizontal ? 12 : 12 - len));
+  const startCol = Math.floor(Math.random() * (horizontal ? 12 - len : 12));
 
-const startRow = Math.floor(Math.random() * (12 - len));
-const startCol = Math.floor(Math.random() * (12 - len));
-const direction = Math.floor(Math.random() * 4);
-// 0 = ➡️ | 1 = ⬇️ | 2 = ↘️ | 3 = ↙️
   positions = [];
 
   for (let r = 0; r < 12; r++) {
@@ -104,48 +101,12 @@ const direction = Math.floor(Math.random() * 4);
       const div = document.createElement("div");
       div.className = "cell";
 
-let startRow, startCol;
-
-if (direction === 0) { // ➡️
-  startRow = Math.floor(Math.random() * 12);
-  startCol = Math.floor(Math.random() * (12 - len));
-}
-
-if (direction === 1) { // ⬇️
-  startRow = Math.floor(Math.random() * (12 - len));
-  startCol = Math.floor(Math.random() * 12);
-}
-
-if (direction === 2) { // ↘️
-  startRow = Math.floor(Math.random() * (12 - len));
-  startCol = Math.floor(Math.random() * (12 - len));
-}
-
-if (direction === 3) { // ↙️
-  startRow = Math.floor(Math.random() * (12 - len));
-  startCol = Math.floor(Math.random() * 12);
-}
-if (direction === 0 && r === startRow && c >= startCol && c < startCol + len) {
-  div.textContent = hiddenWord[c - startCol];
-}
-
-else if (direction === 1 && c === startCol && r >= startRow && r < startRow + len) {
-  div.textContent = hiddenWord[r - startRow];
-}
-
-else if (direction === 2 &&
-         r >= startRow && r < startRow + len &&
-         c >= startCol && c < startCol + len &&
-         r - startRow === c - startCol) {
-  div.textContent = hiddenWord[r - startRow];
-}
-
-else if (direction === 3 &&
-         r >= startRow && r < startRow + len &&
-         c <= startCol && c > startCol - len &&
-         r - startRow === startCol - c) {
-  div.textContent = hiddenWord[r - startRow];
-
+      if (horizontal && r === startRow && c >= startCol && c < startCol + len) {
+        div.textContent = hiddenWord[c - startCol];
+        positions.push({r, c, div});
+      } else if (!horizontal && c === startCol && r >= startRow && r < startRow + len) {
+        div.textContent = hiddenWord[r - startRow];
+        positions.push({r, c, div});
       } else {
         div.textContent = alphabet[Math.floor(Math.random() * alphabet.length)];
       }
@@ -179,19 +140,3 @@ generateGrid();
 
 </body>
 </html>
-
-
-<!--BrainTrials-IQ Word Puzzle
-
-Created by Gëzim Hasani
-© 2026
-
-This project is protected by copyright law.
-Copying, selling, or redistributing this project
-or parts of it without permission is prohibited.
-
-
-
-
-All rights reserved.
--->
