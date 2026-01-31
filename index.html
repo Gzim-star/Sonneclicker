@@ -104,11 +104,11 @@ let drawing = false;
 canvas.addEventListener("pointerdown", e => {
   drawing = true;
   ctx.beginPath();
-  ctx.moveTo(e.offsetX,e.offsetY);
+  ctx.moveTo(e.offsetX, e.offsetY);
 });
 canvas.addEventListener("pointermove", e => {
   if(!drawing) return;
-  ctx.lineTo(e.offsetX,e.offsetY);
+  ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
 canvas.addEventListener("pointerup", () => drawing=false);
@@ -149,20 +149,19 @@ function showWord(){
 
 /* FERTIG → nur korrekt */
 doneBtn.onclick=()=>{
-  // Canvas in Text umwandeln (vereinfachte Erkennung)
-  // Wir vergleichen Anzahl der Striche mit einer Minimalanforderung
+  // Canvas Pixel in Text vereinfachte Erkennung (nur Demo)
+  // Hier kannst du später eine echte Handschrift-zu-Text Logik einbauen
   const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-  let count=0;
+  let pixelCount=0;
   for(let i=0;i<data.data.length;i+=4){
-    if(data.data[i+3]>128) count++;
+    if(data.data[i+3]>128) pixelCount++;
   }
 
-  // Minimaler Check: >50 Pixel = korrekt
-  if(count>50){
-    // Hier könntest du echte Erkennung einfügen
-    alert("Richtig! Nächste Runde.");
+  // Minimaler Check, wenn Pixel >50, gehen wir davon aus korrekt
+  if(pixelCount>50){
+    alert("Gut gemacht! Das Wort war: " + currentWord);
     startRound();
-  }else{
+  } else {
     alert("Noch nicht korrekt! Schreib das Wort richtig.");
   }
 };
