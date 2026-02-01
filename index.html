@@ -22,16 +22,16 @@ body {
 
 h1 { margin-bottom: 20px; }
 
+/* GRID */
 #grid {
   display: grid;
   grid-template-columns: repeat(12, min(24px, 6vw));
   grid-template-rows: repeat(12, min(24px, 6vw));
   gap: 9px;
-  opacity: 0;
-  transition: opacity 0.8s ease-in;
 }
 
 .cell {
+  background: black;
   border-radius: 10%;
   cursor: pointer;
   user-select: none;
@@ -50,7 +50,7 @@ h1 { margin-bottom: 20px; }
 
 <body>
 
-<h1>IQ COLORS</h1>
+<h1>IQ</h1>
 <div id="grid"></div>
 <div id="message"></div>
 
@@ -58,7 +58,7 @@ h1 { margin-bottom: 20px; }
 const grid = document.getElementById("grid");
 const message = document.getElementById("message");
 
-/* 🎨 Farb-Wörter */
+/* 🎨 Farb-Wörter (Name = Länge der Spur) */
 const colors = [
   { name:"RED",     value:"#e53935" },
   { name:"BLUE",    value:"#1e88e5" },
@@ -68,14 +68,12 @@ const colors = [
   { name:"ORANGE",  value:"#fb8c00" },
   { name:"CYAN",    value:"#00acc1" },
   { name:"PINK",    value:"#ec407a" },
-  { name:"LIME",    value:"#cddc39" },
   { name:"BROWN",   value:"#6d4c41" }
 ];
 
 let positions = [];
 let currentIndex = 0;
 let globalOrder = 0;
-let wrongClicks = 0;
 
 /* 🧠 Grid erzeugen */
 function generateGrid() {
@@ -84,7 +82,6 @@ function generateGrid() {
   currentIndex = 0;
   positions = [];
   globalOrder = 0;
-  wrongClicks = 0;
 
   const WORDS_PER_GRID = 6;
   const selected = [];
@@ -98,7 +95,7 @@ function generateGrid() {
     Array.from({ length: 12 }, () => null)
   );
 
-  selected.forEach(c => placeColor(c, gridData));
+  selected.forEach(color => placeColor(color, gridData));
 
   for (let r = 0; r < 12; r++) {
     for (let c = 0; c < 12; c++) {
@@ -109,7 +106,7 @@ function generateGrid() {
         div.style.background = gridData[r][c].color;
         positions.push({ div, order: gridData[r][c].order });
       } else {
-        const random = colors[Math.floor(Math.random()*colors.length)];
+        const random = colors[Math.floor(Math.random() * colors.length)];
         div.style.background = random.value;
       }
 
@@ -118,75 +115,66 @@ function generateGrid() {
     }
   }
 
-  positions.sort((a,b)=>a.order-b.order);
-
-  grid.style.opacity = 0;
-  setTimeout(()=>grid.style.opacity=1,50);
+  positions.sort((a, b) => a.order - b.order);
 }
 
-/* 🎯 Farbe platzieren */
+/* 🎯 Farbe platzieren (identisch zur Wort-Logik) */
 function placeColor(colorObj, gridData) {
   const len = colorObj.name.length;
   let placed = false;
 
   while (!placed) {
-    const mode = Math.floor(Math.random() * 4);
-    const maxRow = (mode===0||mode===3)?12:12-len;
-    const maxCol = (mode===1||mode===2||mode===3)?12-len:12;
-    const sr = Math.floor(Math.random()*maxRow);
-    const sc = Math.floor(Math.random()*maxCol);
+    let mode = Math.floor(Math.random() * 4);
+    const maxRow = (mode === 0 || mode === 3) ? 12 : 12 - len;
+    const maxCol = (mode === 1 || mode === 2 || mode === 3) ? 12 - len : 12;
+
+    const sr = Math.floor(Math.random() * maxRow);
+    const sc = Math.floor(Math.random() * maxCol);
 
     let fits = true;
+    for (let i = 0; i < len; i++) {
+      let r = sr + (mode === 1 || mode === 2 ? i : 0);
+      let c = sc + (mode === 0 || mode === 2 ? i : 0);
 
-    for (let i=0;i<len;i++){
-      let r = sr + (mode===1||mode===2?i:0);
-      let c = sc + (mode===0||mode===2?i:0);
-      if(mode===3){ r=sr-i; c=sc+i; }
+      if (mode === 3) { r = sr - i; c = sc + i; }
 
-      if(r<0||c<0||r>=12||c>=12||gridData[r][c]){
-        fits=false; break;
+      if (r < 0 || r >= 12 || c < 0 || c >= 12 || gridData[r][c]) {
+        fits = false;
+        break;
       }
     }
-    if(!fits) continue;
+    if (!fits) continue;
 
-    for (let i=0;i<len;i++){
-      let r = sr + (mode===1||mode===2?i:0);
-      let c = sc + (mode===0||mode===2?i:0);
-      if(mode===3){ r=sr-i; c=sc+i; }
+    for (let i = 0; i < len; i++) {
+      let r = sr + (mode === 1 || mode === 2 ? i : 0);
+      let c = sc + (mode === 0 || mode === 2 ? i : 0);
+
+      if (mode === 3) { r = sr - i; c = sc + i; }
 
       gridData[r][c] = {
         color: colorObj.value,
         order: globalOrder++
       };
     }
+
     placed = true;
   }
 }
 
-/* ✅ Klick prüfen */
-function checkClick(div){
+/* ✅ Klick prüfen (1-zu-1 wie Original) */
+function checkClick(div) {
   const expected = positions[currentIndex]?.div;
 
-  if(div===expected){
+  if (div === expected) {
     div.classList.add("correct");
     currentIndex++;
 
-    if(currentIndex===positions.length){
-      setTimeout(generateGrid,1200);
+    if (currentIndex === positions.length) {
+      setTimeout(generateGrid, 1200);
     }
   } else {
     div.classList.add("wrong");
-    wrongClicks++;
-    setTimeout(()=>div.classList.remove("wrong"),600);
-
-    if(wrongClicks>=12){
-      grid.style.transition="opacity 1s ease-out";
-      grid.style.opacity=0;
-      setTimeout(()=>{
-        grid.style.transition="opacity 0.8s ease-in";
-        generateGrid();
-      },1000);
-    }
+    setTimeout(() => div.classList.remove("wrong"), 700);
   }
 }
 
