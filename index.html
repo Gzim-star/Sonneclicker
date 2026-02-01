@@ -8,48 +8,48 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <style>
-body{
-  margin:0;
-  background:black;
-  color:white;
-  font-family:Arial, sans-serif;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-height:100vh;
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
 }
 
-h1{ margin-bottom:20px; }
+h1 { margin-bottom: 20px; }
 
 /* GRID */
-#grid{
-  display:grid;
-  grid-template-columns:repeat(12,min(24px,6vw));
-  grid-template-rows:repeat(12,min(24px,6vw));
-  gap:9px;
+#grid {
+  display: grid;
+  grid-template-columns: repeat(12, min(24px, 6vw));
+  grid-template-rows: repeat(12, min(24px, 6vw));
+  gap: 9px;
 }
 
-.cell{
-  background:black;
-  border-radius:10%;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:calc(12px + 0.5vmin);
-  font-weight:bold;
-  color:white;
-  user-select:none;
+.cell {
+  background: white;
+  border-radius: 10%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px + 0.5vmin);
+  font-weight: bold;
+  color: black;
+  user-select: none;
 }
 
-.cell.correct{ background:#0f0; color:black; }
-.cell.wrong{ background:#f00; }
+.cell.correct { background: #0f0; }
+.cell.wrong { background: #f00; }
 
-#message{
-  margin-top:12px;
-  font-size:18px;
-  color:#0f0;
+#message {
+  margin-top: 12px;
+  font-size: 18px;
+  color: #0f0;
 }
 </style>
 </head>
@@ -64,11 +64,11 @@ h1{ margin-bottom:20px; }
 const grid = document.getElementById("grid");
 const message = document.getElementById("message");
 
-/* 🔣 Zeichensatz */
-const symbols = "0123456789-/:;()£&@“.,?!’[]{}#%^*+=_\\|~<>€$¥•";
+/* 🔣 SYMBOL-ALPHABET (statt A-Z) */
+const alphabet = "0123456789-/:;()£&@“.,?!’[]{}#%^*+=_\\|~<>€$¥•";
 
-/* „Wörter“ = Symbol-Sequenzen */
-const sequences = [
+/* 🧠 SYMBOL-SEQUENZEN (statt Wörter) */
+const words = [
   "6•€1",
   "#8@;",
   "£&@%",
@@ -86,99 +86,106 @@ let currentIndex = 0;
 let globalOrder = 0;
 
 /* GRID ERZEUGEN */
-function generateGrid(){
+function generateGrid() {
   grid.innerHTML = "";
   message.textContent = "";
-  positions = [];
   currentIndex = 0;
+  positions = [];
   globalOrder = 0;
 
   const WORDS_PER_GRID = 6;
   const selected = [];
 
-  while(selected.length < WORDS_PER_GRID){
-    const s = sequences[Math.floor(Math.random()*sequences.length)];
-    if(!selected.includes(s)) selected.push(s);
+  while (selected.length < WORDS_PER_GRID) {
+    const w = words[Math.floor(Math.random() * words.length)];
+    if (!selected.includes(w)) selected.push(w);
   }
 
-  const gridData = Array.from({length:12},()=>Array(12).fill(null));
-  selected.forEach(seq => placeSequence(seq, gridData));
+  const gridData = Array.from({ length: 12 }, () =>
+    Array.from({ length: 12 }, () => null)
+  );
 
-  for(let r=0;r<12;r++){
-    for(let c=0;c<12;c++){
+  selected.forEach(word => placeWord(word, gridData));
+
+  for (let r = 0; r < 12; r++) {
+    for (let c = 0; c < 12; c++) {
       const div = document.createElement("div");
       div.className = "cell";
 
-      if(gridData[r][c]){
-        div.textContent = gridData[r][c].char;
-        positions.push({div, order:gridData[r][c].order});
-      }else{
-        div.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+      if (gridData[r][c]) {
+        div.textContent = gridData[r][c].letter;
+        positions.push({ div, order: gridData[r][c].order });
+      } else {
+        div.textContent =
+          alphabet[Math.floor(Math.random() * alphabet.length)];
       }
 
-      div.onclick = ()=>checkClick(div);
+      div.onclick = () => checkClick(div);
       grid.appendChild(div);
     }
   }
 
-  positions.sort((a,b)=>a.order-b.order);
+  positions.sort((a, b) => a.order - b.order);
 }
 
 /* SEQUENZ PLATZIEREN */
-function placeSequence(seq, gridData){
-  const len = seq.length;
+function placeWord(word, gridData) {
+  const len = word.length;
   let placed = false;
 
-  while(!placed){
+  while (!placed) {
     // 0 ➡️ | 1 ⬇️ | 2 ↘️ | 3 ↗️
-    const mode = Math.floor(Math.random()*4);
+    let mode = Math.floor(Math.random() * 4);
 
-    const maxRow = (mode===0||mode===3)?12:12-len;
-    const maxCol = (mode===1||mode===2||mode===3)?12-len:12;
+    const maxRow = (mode === 0 || mode === 3) ? 12 : 12 - len;
+    const maxCol = (mode === 1 || mode === 2 || mode === 3) ? 12 - len : 12;
 
-    const sr = Math.floor(Math.random()*maxRow);
-    const sc = Math.floor(Math.random()*maxCol);
+    const sr = Math.floor(Math.random() * maxRow);
+    const sc = Math.floor(Math.random() * maxCol);
 
     let fits = true;
-    for(let i=0;i<len;i++){
-      let r = sr + (mode===1||mode===2 ? i : 0);
-      let c = sc + (mode===0||mode===2 ? i : 0);
-      if(mode===3){ r = sr - i; c = sc + i; }
+    for (let i = 0; i < len; i++) {
+      let r = sr + (mode === 1 || mode === 2 ? i : 0);
+      let c = sc + (mode === 0 || mode === 2 ? i : 0);
+      if (mode === 3) { r = sr - i; c = sc + i; }
 
-      if(r<0||r>=12||c<0||c>=12||gridData[r][c]){
-        fits=false; break;
+      if (r < 0 || r >= 12 || c < 0 || c >= 12 || gridData[r][c]) {
+        fits = false;
+        break;
       }
     }
-    if(!fits) continue;
 
-    for(let i=0;i<len;i++){
-      let r = sr + (mode===1||mode===2 ? i : 0);
-      let c = sc + (mode===0||mode===2 ? i : 0);
-      if(mode===3){ r = sr - i; c = sc + i; }
+    if (!fits) continue;
+
+    for (let i = 0; i < len; i++) {
+      let r = sr + (mode === 1 || mode === 2 ? i : 0);
+      let c = sc + (mode === 0 || mode === 2 ? i : 0);
+      if (mode === 3) { r = sr - i; c = sc + i; }
 
       gridData[r][c] = {
-        char: seq[i],
+        letter: word[i],
         order: globalOrder++
       };
     }
+
     placed = true;
   }
 }
 
 /* KLICK PRÜFEN */
-function checkClick(div){
+function checkClick(div) {
   const expected = positions[currentIndex]?.div;
 
-  if(div === expected){
+  if (div === expected) {
     div.classList.add("correct");
     currentIndex++;
 
-    if(currentIndex === positions.length){
+    if (currentIndex === positions.length) {
       setTimeout(generateGrid, 1200);
     }
-  }else{
+  } else {
     div.classList.add("wrong");
-    setTimeout(()=>div.classList.remove("wrong"),700);
+    setTimeout(() => div.classList.remove("wrong"), 700);
   }
 }
 
@@ -187,9 +194,3 @@ generateGrid();
 
 </body>
 </html>
-
-<!--
-BrainTrials – IQ Symbol Puzzle
-Created by Gëzim Hasani © 2026
-All rights reserved.
--->
